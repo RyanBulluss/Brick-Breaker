@@ -1,13 +1,79 @@
 import { useState, useEffect } from "react";
 import "./constants";
-import { board, paddle, ball, findX, rng } from "./constants";
+import { board, paddle, ball, findX, rng, level1, rows, level2, level3 } from "./constants";
+import Brick from "./Brick";
+import { BrickType } from "./BrickType";
+
+const brick1: BrickType = {
+  hitsRemaining: 5,
+  x: 0,
+  y: 0,
+  height: board.height / 20,
+  width: board.width / 5.5,
+};
 
 export default function Game() {
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
   const [paddleX, setPaddleX] = useState(0);
   const [ballX, setBallX] = useState(board.width / 2 - ball.width / 2);
-  const [ballY, setBallY] = useState(0);
-  const [ballSpeed, setBallSpeed] = useState({ x: rng(20) - 10, y: 6 });
+  const [ballY, setBallY] = useState(board.height / 2);
+  const [ballSpeed, setBallSpeed] = useState({ x: 6, y: 6 });
+  const [bricks, setBricks] = useState([]);
+
+  function createBricks(level: any) {
+    const newBricks: any = [];
+    let x = 0;
+    let y = 30;
+    let gap = 5;
+
+    level.forEach((n: number, idx: number) => {
+      const newBrick: BrickType = {
+        hitsRemaining: n,
+        x: x + gap,
+        y: y + gap,
+        height: board.height / 20,
+        width: board.width / 5.5,
+      };
+
+      if ((idx + 1) % rows === 0) {
+        y += board.height / 20 + gap;
+        x = 0;
+      } else {
+        x += board.width / 5.5 + gap;
+      }
+      newBricks.push(newBrick);
+    });
+    setBricks(newBricks);
+  }
+
+  function hittingBrick (y: number, x:number) {
+    bricks.forEach((brick: any, idx: number) => {
+      if (x + ball.height >= brick.x && x <= brick.x + brick.width && y <= brick.y + brick.height && y + ball.height >= brick.y && brick.hitsRemaining > 0) {
+        const left = x + ball.height - brick.x;
+        const right = brick.x + brick.width - x;
+        const bottom = brick.y + brick.height - y;
+        const top = y + ball.height - brick.y;
+
+        let newBricks: any = [...bricks];
+        newBricks[idx].hitsRemaining -= 1;
+        setBricks(newBricks);
+        
+        if(top < right && top < left && top < bottom) {
+          setBallSpeed((prevSpeed) => ({ ...prevSpeed, y: -prevSpeed.y }))
+        } else
+        if(right < top && right < left && right < bottom) {
+          setBallSpeed((prevSpeed) => ({ ...prevSpeed, x: -prevSpeed.x }))
+        } else
+        if(bottom < right && bottom < left && bottom < top) {
+          setBallSpeed((prevSpeed) => ({ ...prevSpeed, y: -prevSpeed.y }))
+        } else
+        if(left < right && left < top && left < bottom) {
+          setBallSpeed((prevSpeed) => ({ ...prevSpeed, x: -prevSpeed.x }))
+        }
+        
+      }
+    })
+  }
 
   useEffect(() => {
     const gameLoop = setInterval(() => {
@@ -17,7 +83,7 @@ export default function Game() {
       setBallX(newX);
       setBallY(newY);
 
-      if (newY + 10 >= board.height) {
+      if (newY + paddle.height / 2 >= board.height) {
         setPlaying(false);
       }
 
@@ -28,13 +94,16 @@ export default function Game() {
         setBallSpeed((prevSpeed) => ({ ...prevSpeed, y: -prevSpeed.y }));
       }
       if (
-        newY > board.height - paddle.height &&
-        newX >= paddleX &&
+        newY + ball.height > board.height - paddle.height &&
+        newX + ball.width >= paddleX &&
         newX <= paddleX + paddle.width
       ) {
         let newXSpeed = findX(newX, paddleX);
         setBallSpeed((prevSpeed) => ({ x: newXSpeed, y: -prevSpeed.y }));
       }
+      let b = hittingBrick(newY, newX)
+
+      
     }, 16);
 
     return () => clearInterval(gameLoop); // Cleanup function to clear interval when component unmounts
@@ -42,7 +111,7 @@ export default function Game() {
 
   function startGame() {
     setBallX(board.width / 2 - ball.width / 2);
-    setBallY(0);
+    setBallY(board.height / 2);
     setPlaying(true);
     setBallSpeed({ x: rng(20) - 10, y: 6 });
   }
@@ -59,7 +128,10 @@ export default function Game() {
   };
 
   return (
-    <div className="h-full w-full" onMouseMove={(e) => handleMouseMove(e)}>
+    <div
+      className="h-full w-full flex flex-col justify-center"
+      onMouseMove={(e) => handleMouseMove(e)}
+    >
       <div
         style={{
           height: board.height,
@@ -69,6 +141,11 @@ export default function Game() {
         }}
         className="board"
       >
+        <div className="top-0 left-0 w-full board">
+          {bricks.map((brick) => (
+            <Brick brick={brick} />
+          ))}
+        </div>
         <div
           style={{
             height: ball.height,
@@ -76,6 +153,8 @@ export default function Game() {
             backgroundColor: ball.color,
             top: ballY,
             left: ballX,
+            border: "1px solid black",
+            zIndex: 5,
           }}
           className="rounded-full"
         ></div>
@@ -86,10 +165,37 @@ export default function Game() {
             backgroundColor: paddle.color,
             top: board.height - paddle.height,
             left: paddleX,
+            border: "1px solid black",
           }}
         ></div>
+        <div className="flex top-[700px]">
+        <button
+          onClick={() => createBricks(level1)}
+          className="p-4 m-4 bg-blue-600 hover:bg-red-700 text-white rounded-full"
+        >
+          Level 1
+        </button>
+        <button
+          onClick={() => createBricks(level2)}
+          className="p-4 m-4 bg-blue-600 hover:bg-red-700 text-white rounded-full"
+        >
+          Level 2
+        </button>
+        <button
+          onClick={() => createBricks(level3)}
+          className="p-4 m-4 bg-blue-600 hover:bg-red-700 text-white rounded-full"
+        >
+          Level 3
+        </button>
+        <button
+          onClick={() => startGame()}
+          className="p-4 m-4 bg-red-600 hover:bg-red-700 text-white rounded-full"
+        >
+          Start Game
+        </button>
+        </div>
+        
       </div>
-      <button onClick={() => startGame()} className="p-4 bg-red-600 hover:bg-red-700 text-white rounded-full m-4">Start Game</button>
     </div>
   );
 }

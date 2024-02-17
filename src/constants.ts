@@ -1,19 +1,25 @@
 const board = {
   height: 700,
   width: 400,
-  margin: 100
+  margin: 20
 };
+
+const rows = 5;
+
+const level1 = [1, 1, 0, 1, 1, 2, 2, 0, 2, 2, 1, 1, 0, 1, 1, 2, 2, 0, 2, 2, 1, 1, 0, 1, 1];
+const level2 = [1, 2, 3, 2, 1, 2, 3, 4, 3, 2, 3, 4, 5, 4, 3, 2, 3, 4, 3, 2, 1, 2, 3, 2, 1];
+const level3 = [5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1];
 
 const ball = {
     height: 15,
     width: 15,
-    color:"black"
+    color:"gray"
 }
 
 const paddle = {
   height: 30,
   width: 100,
-  color: "black",
+  color: "lightgray",
 };
 
 function findX(ballX: number, paddleX: number) {
@@ -33,4 +39,4 @@ function rng(n: number) {
     return Math.floor(Math.random() * n);
 }
 
-export { board, paddle, ball, findX, rng };
+export { board, paddle, ball, findX, rng, level1, level2, level3, rows };
